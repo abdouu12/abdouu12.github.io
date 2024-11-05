@@ -6,6 +6,7 @@ tags: [burp]
 ---
 
 what did I learn from solving this CTF?
+
 - how to read and understand the requests sent by the client to the server
 - how to read and understand the responses sent from the server to the client
 - what HTTP does
