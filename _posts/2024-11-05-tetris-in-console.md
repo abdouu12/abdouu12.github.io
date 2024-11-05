@@ -1,10 +1,11 @@
 ---
-title: "TETRIS in consol"
-date: 2024-11-5 17:07:00 +0000
-categories: [coding] [personal projects]
-tags: [c++] [oop]
+title: "TETRIS in Console"
+date: 2024-11-05 17:07:00 +0000
+categories: [coding, personal projects]
+tags: [c++, oop]
+published: true
 ---
-#
+{% raw %}
 after doing some small exercises (like making a fully functional calculator) and exploring some advanced programming concepts namely OOP, I decided to take on a bigger project, something way harder and challenging, a tetris game in consol.
 # making the block class:
 ```cpp
@@ -55,22 +56,24 @@ and loops through the rows and columns, if there the cell contains 1s it prints 
 # The first challenge:
 making the blocks appear on the screen wasn't the hardest thing to do if I am to be honest, it porbably ranks the lowest in terms of the most difficult challenges I had to face, nonetheless it required a bit of thinking.
 ```cpp
-void make_block_appear(int Gridlayer[12][12], blocks& I_block, blocks& O_block, blocks& S_block, blocks& Z_block, blocks& L_block, blocks& J_block, blocks& T_block, vector<pair<int, int>>& temp_layer) {
+void make_block_appear(int Gridlayer[12][12], blocks& I_block, blocks& O_block, blocks& S_block, blocks& Z_block, blocks& L_block, blocks& J_block, blocks& T_block, vector<pair<int, int>>& temp_layer, string& temp_rand) {
     vector<string> random_block_generator = {"I", "S", "Z", "T", "O", "L", "J"};
     srand(static_cast<unsigned int>(time(0)));
+    string block_choice;  // Declare block_choice to hold the randomly selected block type
+    
+    // If temp_rand is not empty, use it; otherwise, choose a random block
     if (temp_rand.empty()) {
-        block_choice = random_block_generator[rand() % 7];
+        block_choice = random_block_generator[rand() % 7];  // Random block selection
     }
-    else{
-        block_choice = temp_rand;
+    else {
+        block_choice = temp_rand;  // Use predefined block (if temp_rand is passed)
     }
-    
-    
-    temp_layer.clear();
 
-    // Place the block based on present_block
+    temp_layer.clear();  // Clear previous block positions
+
+    // Place the block based on block_choice
     if (block_choice == "I") {
-        for (auto& pos : I_block.block_layer) { 
+        for (auto& pos : I_block.block_layer) {
             if (pos.first >= 0 && pos.first < 12 && pos.second >= 0 && pos.second < 12) {
                 Gridlayer[pos.first][pos.second] = 1;
             }
@@ -78,13 +81,54 @@ void make_block_appear(int Gridlayer[12][12], blocks& I_block, blocks& O_block, 
         temp_layer = I_block.block_layer;
     }
     else if (block_choice == "O") {
-        for (auto& pos : O_block.block_layer) { 
+        for (auto& pos : O_block.block_layer) {
             if (pos.first >= 0 && pos.first < 12 && pos.second >= 0 && pos.second < 12) {
                 Gridlayer[pos.first][pos.second] = 1;
             }
         }
+        temp_layer = O_block.block_layer;
     }
-    ...etc
+    else if (block_choice == "S") {
+        for (auto& pos : S_block.block_layer) {
+            if (pos.first >= 0 && pos.first < 12 && pos.second >= 0 && pos.second < 12) {
+                Gridlayer[pos.first][pos.second] = 1;
+            }
+        }
+        temp_layer = S_block.block_layer;
+    }
+    else if (block_choice == "Z") {
+        for (auto& pos : Z_block.block_layer) {
+            if (pos.first >= 0 && pos.first < 12 && pos.second >= 0 && pos.second < 12) {
+                Gridlayer[pos.first][pos.second] = 1;
+            }
+        }
+        temp_layer = Z_block.block_layer;
+    }
+    else if (block_choice == "L") {
+        for (auto& pos : L_block.block_layer) {
+            if (pos.first >= 0 && pos.first < 12 && pos.second >= 0 && pos.second < 12) {
+                Gridlayer[pos.first][pos.second] = 1;
+            }
+        }
+        temp_layer = L_block.block_layer;
+    }
+    else if (block_choice == "J") {
+        for (auto& pos : J_block.block_layer) {
+            if (pos.first >= 0 && pos.first < 12 && pos.second >= 0 && pos.second < 12) {
+                Gridlayer[pos.first][pos.second] = 1;
+            }
+        }
+        temp_layer = J_block.block_layer;
+    }
+    else if (block_choice == "T") {
+        for (auto& pos : T_block.block_layer) {
+            if (pos.first >= 0 && pos.first < 12 && pos.second >= 0 && pos.second < 12) {
+                Gridlayer[pos.first][pos.second] = 1;
+            }
+        }
+        temp_layer = T_block.block_layer;
+    }
+}
 ```
 the main idea was to seperate the grid from the blocks, having them on seperate layers provided easier and more robust control over the entire code. If we want to make the block appear, we first need to create a vector that has the names of the blocks, once that's done we will create a variable called "block choice" and we will randomly fill it with random element from the random block generator vector. 
 For this we need the "#include <random>", I won't yap about how randomness works in cpp so I'll move on to the next step.
@@ -402,3 +446,4 @@ void custom_print(string variable) {
 ```
 the first clears the consol so the user doesn't have to see all of the bloat, the second just makes the prompts stand out better.
 
+{% endraw %}
