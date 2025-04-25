@@ -539,7 +539,10 @@ Click Download/Verify.
 Hit Run — enjoy the blink.
 
 
-
+<video autoplay loop muted playsinline width="400">
+  <source src="/assets/images/blink.mp4" type="video/mp4">
+  Your browser doesn’t support HTML5 video.
+</video>
 
 
 
