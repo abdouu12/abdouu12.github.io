@@ -15,7 +15,7 @@ Any hobbyist can throw together some wires, connect a few modules, and use the H
 It worked — but I had no real idea how. I couldn’t explain what was happening under the hood. And that’s when impostor syndrome hit me like a brick.
 
 So yeah — I realized the solution wasn’t another flashy project.
-I needed something deeper, harder, something that would actually teach me something real. Something that would set me apart from your average Arduino or ESP32 hobbyist.
+I needed something harder, something that would actually teach me something real. Something that would set me apart from your average Arduino or ESP32 hobbyist.
 
 I needed to go bare-metal.
 
@@ -24,45 +24,46 @@ No libraries. No HAL. No helper functions. Just me, the registers, and the datas
 And what better way to start my journey toward becoming a real embedded systems engineer…
 than blinking an LED — from scratch.
 
-# requirements:
+# Requirements:
 
-## an MCU:
+`-An MCU:`
 This was my first time doing baremetal programming. I used STM32 Nucleo F446 because it was the most complex MCU(microcontroller) I had.You don’t have to use the one I used as this will work on any MCU.
 
-## Datasheet and reference manual:
-in baremetal programming you will manipulate the registers and interact with the memory directly so the datasheet and reference manual are a must. Besides learning to read directly from the datasheet and reference manual is a skill every embedded systems engineer needs to be familiar with. Good news is that these are available for free on the internet and a simple google search will do.
-## compiler:
+`-Datasheet and reference manual:`
+In baremetal programming you will manipulate the registers and interact with the memory directly so the datasheet and reference manual are a must. Besides learning to read directly from the datasheet and reference manual is a skill every embedded systems engineer needs to be familiar with. Good news is that these are available for free on the internet and a simple google search will do.
+
+`-Compiler:`
 Since STM32 uses ARM processors (the F446 runs a Cortex-M4), you need an ARM compiler. I used arm-none-eabi-gcc, which is free and widely supported.
 
-## Text Editor / IDE:
+`-Text Editor / IDE:`
 You don’t need a full IDE, but you’ll want a solid editor. I used VS Code with the ARM toolchain and Cortex-Debug extension. You could also use something like CLion, Sublime, or just a terminal setup with make.
 
-## Makefile:
+`-Makefile:`
 Optional, but useful. Instead of manually compiling with arm-none-eabi-gcc every time, a simple Makefile saves time and lets you control every step of the build.
 
-## a flashing tool:
+`-A flashing tool:`
 You need a way to actually put your compiled code onto the MCU. Most Nucleo boards have an onboard ST-Link debugger, so you can use STM32CubeProgrammer, ST-Link Utility, or OpenOCD. If you're using VS Code, the Cortex-Debug extension can handle flashing through ST-Link too.
 
 
-# the backbone:
+# The backbone:
 
-alright now that we got everything ready, what files do we need? 
+Alright now that we got everything ready, what files do we need? 
 
-*main.c*: where the LED blink logic lives.
-*stm32f446.h(optional)*:  a custom header with register definitions.
-*startup.S*: defines the vector table and reset handler. (will be explained later)
-*linker.ld*: also known as the linker script; tells the compiler where to put everything in memory.
-*Makefile(optional)*: automates the build process so you don’t have to type arm-none-eabi-gcc a thousand times.
+- `main.c`: where the LED blink logic lives.  
+- `stm32f446.h` *(optional)*: a custom header with register definitions.  
+- `startup.S`: defines the vector table and reset handler.  
+- `linker.ld`: linker script; tells the compiler where to place stuff in memory.  
+- `Makefile` *(optional)*: automates the build process so you don’t have to type `arm-none-eabi-gcc` a thousand times.
 
-these are the minimum files we need in order to make thins blinky work.
+These are the minimum files we need in order to make thins blinky work.
 
-# principles:
+# Principles:
 
 If you already know this stuff, feel free to skip to the code.
 I’m going to assume you don’t, which is why I’ll explain a few core concepts and syntax patterns that show up everywhere in embedded C.
 (Fair warning — this part’s a bit long)
 
-## bitwise sytnax:
+## Bitwise sytnax:
 In embedded C, bitwise operations are everywhere. You use them to control specific bits in a register — like turning on a pin, enabling a clock— without touching the rest of the register.
 
 Here are the basics:
@@ -89,7 +90,7 @@ Example: 1 << 5 gives you 0b100000, which is bit 5 set
 
 You’ll use these constantly when working with registers. Almost every GPIO setup line is some combination of &= ~() and |=
 
-## pointers:
+## Pointers:
 If you want to store a bunch of toys, you use a drawer. You’ve just *allocated* a chunk of space and filled it with stuff. Then you label that drawer with a number so you don’t forget where it is.
 
 That label — the number — is basically what a pointer is.
@@ -114,18 +115,18 @@ This register is used to set the mode (or state) of each GPIO pin. Each pin gets
 11: Analog – used for analog input (ADC), or to reduce power consumption by disconnecting digital logic.
 
 #### GPIOx_ODR:
-if you set the MODER register to output then you will use this register to write values.
+If you set the MODER register to output then you will use this register to write values.
 example:
 ```cpp
 GPIOA->ODR |= (1 << 5);
 ```
-the equivalent of this in HAL is HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+The equivalent of this in HAL is HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
 #### GPIOx_IDR:
-same as ODR but instead of writing values it reads values and obviously we need MODER to be set to input. 
+Same as ODR but instead of writing values it reads values and obviously we need MODER to be set to input. 
 
 #### GPIOx_BSRR:
-stands for Bit Set/Reset Register it does exactly what it stands for it sets bit or flips them meaning it gives HIGH or LOW values to pins, but it has an advantage over ODR which is speed. Unlike ODR it doesn't involve the read-modify -write process, it's direct hardware write and it doesn't risk affecting any other pin.
+Stands for Bit Set/Reset Register it does exactly what it stands for it sets bit or flips them meaning it gives HIGH or LOW values to pins, but it has an advantage over ODR which is speed. Unlike ODR it doesn't involve the read-modify -write process, it's direct hardware write and it doesn't risk affecting any other pin.
 
 ### RCC:
 RCC stands for **Reset and Clock Control** and it mainly manages these 3 things:
@@ -133,13 +134,13 @@ RCC stands for **Reset and Clock Control** and it mainly manages these 3 things:
 -What speed the system runs at
 -Resetting peripherals when needed
 
-before we can use any GPIO pin we have to enable the **clock**. In STM32 every peripheral (UART, SPI, timers, etc) is connected to a bus and each bus is fed by a clock domain. If the clock to a peripheral is off it won't do anything, even if you write it to registers.
+Before we can use any GPIO pin we have to enable the **clock**. In STM32 every peripheral (UART, SPI, timers, etc) is connected to a bus and each bus is fed by a clock domain. If the clock to a peripheral is off it won't do anything, even if you write it to registers.
 
 
 
-# the code:
+# The code:
 
-we understood the basics for now, we'll run into more concepts I will have to explain once we get to the startup code and linker script but for now we have what we need to write the **main.c**.
+We understood the basics for now, we'll run into more concepts I will have to explain once we get to the startup code and linker script but for now we have what we need to write the **main.c**.
 
 To help with this, it’s always good practice to use a header file to store all of our structs.
 (I’m going to assume you’re familiar with C structs.)
@@ -175,23 +176,23 @@ At this point, we have to check the datasheet for guidance to find the base addr
 
 ![GPIOA base address](/assets/images/memorymap.png)
 
-this is the **memory map**
+This is the **memory map**
 Under it, you can find a table that lists the addresses of all the elements inside the STM32 — like GPIOs, timers, USARTs, and more.
 
 ![GPIOA base address](/assets/images/gpioamemeorymap.png)
 
-hence we will write it the following way:
+Hence we will write it the following way:
 ```cpp
 #define GPIOA ((GPIOA_def*) 0x40020000)
 ```
-moving on to the clock, just like we defined the gpio struct, we’ll do the same for RCC.
+Moving on to the clock, just like we defined the gpio struct, we’ll do the same for RCC.
 
-if you check the **block diagram** in the datasheet, you’ll see gpioa sits on the ahb1 bus.
+If you check the **block diagram** in the datasheet, you’ll see gpioa sits on the ahb1 bus.
 
-we’ll define the other buses too, but for now we only care about ahb1.
+We’ll define the other buses too, but for now we only care about ahb1.
 ![GPIOA base address](/assets/images/block.png)
 
-hence the code will be like the following:
+Hence the code will be like the following:
 ```cpp
 typedef struct {
     volatile uint32_t CR;
@@ -208,30 +209,30 @@ typedef struct {
     volatile uint32_t AHB1ENR;
 } RCC_def;
 ```
-and we will reference the datasheet again to see what the base address of the RCC is.
+And we will reference the datasheet again to see what the base address of the RCC is.
 ![RCC base address](/assets/images/rcc.png)
 
 ```cpp
 #define RCC ((RCC_def*) 0x40023800)
 ```
 
-and we're done with the setup for the main.c file!
+And we're done with the setup for the main.c file!
 
-we’ll first define a simple delay function so we can actually see the LED blinking. 
-a basic for loop will do the job:
+We’ll first define a simple delay function so we can actually see the LED blinking. 
+A basic for loop will do the job:
 
 ```cpp
 void delay(void) {
   for (volatile int i = 0; i < 1000000; i++);
 }
 ```
-now for the int main() function. inside it, we’ll activate the RCC by setting bit 0 in RCC->AHB1ENR to enable the clock for GPIOA.
+Now for the int main() function. inside it, we’ll activate the RCC by setting bit 0 in RCC->AHB1ENR to enable the clock for GPIOA.
 
-then we’ll clear bits 11 and 10 in GPIOA->MODER, and set them properly to configure PA5 as an output pin.
+Then we’ll clear bits 11 and 10 in GPIOA->MODER, and set them properly to configure PA5 as an output pin.
 
-inside the main loop, we’ll turn the pin ON using BSRR, use the delay function, turn the pin OFF using BSRR, and then delay again before it turns back ON.
+Inside the main loop, we’ll turn the pin ON using BSRR, use the delay function, turn the pin OFF using BSRR, and then delay again before it turns back ON.
 
-this time, we have to reference the reference manual and check the register map for GPIO to see how many bits we need to shift 1 by.
+This time, we have to reference the reference manual and check the register map for GPIO to see how many bits we need to shift 1 by.
 ![MODER bits for PA5](/assets/images/moder.png)  
 ![BSRR layout](/assets/images/bsrr.png)
 ```cpp
@@ -250,41 +251,40 @@ int main() {
   }
 }
 ```
-that’s main.c done.
+That’s main.c done.
 
-moving on to the startup file —
-possibly the hardest part of this entire baremetal project. I decided to write it in assembly so I could really understand what’s going on under the hood.
+Moving on to the startup file —possibly the hardest part of this entire baremetal project. I decided to write it in assembly so I could really understand what’s going on under the hood.
 
-but before jumping into the code, we need to clear up a few things first:
-why do we need a startup file?
-what does it even do?
+But before jumping into the code, we need to clear up a few things first:
+Why do we need a startup file?
+What does it even do?
 
-## vector table, interrupts, and what happens before main():
+## Vector table, interrupts, and what happens before main():
 
-when the MCU powers on, it needs to be told what to do — what data to move, what registers to activate, what peripherals to reset. all the logic lives in main(), but the MCU doesn’t just start there on its own. that’s where the startup code comes in. it handles the low-level setup: copying .data, zeroing .bss, setting up the stack, and finally jumping to main(). it also sets up a vector table to deal with interrupts and exceptions — because if a hardfault or some unexpected interrupt hits while the MCU is trying to blink an LED, it needs to know where to go. I’ll explain only the minimum needed to get this blinky working.
+When the MCU powers on, it needs to be told what to do — what data to move, what registers to activate, what peripherals to reset. all the logic lives in main(), but the MCU doesn’t just start there on its own. that’s where the startup code comes in. it handles the low-level setup: copying .data, zeroing .bss, setting up the stack, and finally jumping to main(). it also sets up a vector table to deal with interrupts and exceptions — because if a hardfault or some unexpected interrupt hits while the MCU is trying to blink an LED, it needs to know where to go. I’ll explain only the minimum needed to get this blinky working.
 
-### interrupts, what is it?
+### Interrupts, what is it?
 
-imagine you're working as a receptionist at a hotel. you're focused on paperwork, and every 5 minutes you look up to check if any guests need help. all goes well until, in the middle of your work, a customer walks in — but leaves before your next 5-minute check. what happened? while you were processing your task, an event happened and you missed it.
+Imagine you're working as a receptionist at a hotel. you're focused on paperwork, and every 5 minutes you look up to check if any guests need help. all goes well until, in the middle of your work, a customer walks in — but leaves before your next 5-minute check. what happened? while you were processing your task, an event happened and you missed it.
 
-the solution is to install a bell at the counter. now, whenever a customer comes in, they ring the bell and you immediately stop what you're doing to take care of them. once the interruption is handled, you go back to your paperwork.
+The solution is to install a bell at the counter. now, whenever a customer comes in, they ring the bell and you immediately stop what you're doing to take care of them. once the interruption is handled, you go back to your paperwork.
 
-this is more or less the same with an MCU — when the guest comes and rings the bell, we call that an **IRQ** (interrupt request). when an IRQ is triggered, the MCU runs its **ISR** (interrupt service routine), which is a special routine that handles that specific interrupt type.
+This is more or less the same with an MCU — when the guest comes and rings the bell, we call that an **IRQ** (interrupt request). when an IRQ is triggered, the MCU runs its **ISR** (interrupt service routine), which is a special routine that handles that specific interrupt type.
 
-of course, not all interrupts are equal, a fire alarm and a ring bell from a guest aren't the same, hence why there is a priority list for interrupts. We divide these into **maskable** and **unmaskable** interrupts, **NMI**(non maskable interrupts) are like fire alarms, they **can't be ignored** and the MCU can't disable them. examples include: Reset, Hardfault, Busfault, while maskable interrupts can be ignored. 
+Of course, not all interrupts are equal, a fire alarm and a ring bell from a guest aren't the same, hence why there is a priority list for interrupts. We divide these into **maskable** and **unmaskable** interrupts, **NMI**(non maskable interrupts) are like fire alarms, they **can't be ignored** and the MCU can't disable them. examples include: Reset, Hardfault, Busfault, while maskable interrupts can be ignored. 
 
-this explanation leads us to the **vector table**, an essential componenet of the startup, the vector table is just a list of interrupts and exceptions (error events) each one paired with their an address so that the MCU can know where to jump in case an IRQ is triggered.
+This explanation leads us to the **vector table**, an essential componenet of the startup, the vector table is just a list of interrupts and exceptions (error events) each one paired with their an address so that the MCU can know where to jump in case an IRQ is triggered.
 
-our processor expects the vector table to be located at the beginning of memory, right after reset.
+Our processor expects the vector table to be located at the beginning of memory, right after reset.
 here is what it looks like:
 
 ![vector table](/assets/images/vec.png)
 
 
-in the code, we want to define the isr_vector and include all the interrupts we need. we use .section to organize them into their own dedicated block.
+In the code, we want to define the isr_vector and include all the interrupts we need. we use .section to organize them into their own dedicated block.
 .word is equivalent to uint32_t in a high level language, we're putting everything from the isr vector section int he beginning of the flash this way 
 
-we also want to use %progbits to tell the compiler that isr_vector contzians actual data and isn't uninitialized space like .bss
+We also want to use %progbits to tell the compiler that isr_vector contzians actual data and isn't uninitialized space like .bss
 ```s
 .syntax unified
 .cpu cortex-m4
@@ -314,8 +314,8 @@ we also want to use %progbits to tell the compiler that isr_vector contzians act
         .word Default_Handler + 1
     .endr
 ```
-### reset_handler — the first C-style code that actually runs
-reset_handler is the very first routine the MCU executes after it loads the initial stack pointer. Its only jobs are:
+### Reset_handler — the first C-style code that actually runs
+Reset_handler is the very first routine the MCU executes after it loads the initial stack pointer. Its only jobs are:
 
 Copy .data from Flash to SRAM.
 
@@ -325,10 +325,10 @@ Jump to main().
 
 ### .text, .data, and .bss:
 
-we know we need to transfer the instructions and variables during runtime from flash to SRAM — but how do we actually do that?
+We know we need to transfer the instructions and variables during runtime from flash to SRAM — but how do we actually do that?
 pointers will play a huge role in making this happen.
 
-in simple terms:
+In simple terms:
 
 .text is where the code lives, these are your compiled instructions.
 
@@ -341,22 +341,22 @@ in simple terms:
 
 I drew a diagram explaining what's happening during the trasnfer:
 
-when the MCU starts, it needs to copy all the initialized variables from Flash to SRAM.
+When the MCU starts, it needs to copy all the initialized variables from Flash to SRAM.
 those variables are stored in Flash right after the .text section — starting at _etext.
 we want to copy them into RAM, starting from _sdata and ending at _edata.
 
 ![transfer](/assets/images/transfer.png)
 
-to transfer it, we’ll use a loop and two pointers — a destination and an end pointer.
+To transfer it, we’ll use a loop and two pointers — a destination and an end pointer.
 as long as the destination is less than the end, we’ll copy from the source to the destination using ```*destination = *source;``` in pseudo code, then we increment both the destination and the source, moving through memory one word at a time.*
 
-in assemply, we will define 3 registers r0, r1, and r2 and use ldr to load them with the addresses of _sidata, _sdata and _edata
+In assemply, we will define 3 registers r0, r1, and r2 and use ldr to load them with the addresses of _sidata, _sdata and _edata
 we will then use cmp to compare r1 and r2 and as long as r1 is less than r2, we’ll keep copying data.
 
-the next step is to zero the .bss section. to do that, we’ll use a similar loop, but this time we’ll store zeros instead of copying data.
+The next step is to zero the .bss section. to do that, we’ll use a similar loop, but this time we’ll store zeros instead of copying data.
 
-to finish it off we'll jump to main 
-in assembly it looks like this:
+To finish it off we'll jump to main 
+In assembly it looks like this:
 
 ```s
 .section .text.reset_handler, "ax", %progbits
@@ -393,7 +393,7 @@ reset_handler:
 .size reset_handler, .-reset_handler
 
 ```
-we also need a default handler that takes care of any interrupts we haven't implemented which will prevent any sudden crashes in the MCU.
+We also need a default handler that takes care of any interrupts we haven't implemented which will prevent any sudden crashes in the MCU.
 
 ```s
 .section .text.Default_Handler, "ax", %progbits
@@ -405,26 +405,26 @@ Default_Handler:
 .size Default_Handler, .-Default_Handler
 ```
 
-that's the startup code done.
+That's the startup code done.
 
 
-moving on to the linker script.
+Moving on to the linker script.
 
-## the memory layout:
+## The memory layout:
 
-the linker script is critical. it tells the toolchain exactly where every section lives in Flash and SRAM so the startup code can find it. ```.text, .data, .bss```, the vector table— all of them are defined here. if the addresses are wrong, the MCU will boots into chaos.for syntax your friend is :[text](https://sourceware.org/binutils/docs/ld/Scripts.html)
+The linker script is critical. it tells the toolchain exactly where every section lives in Flash and SRAM so the startup code can find it. ```.text, .data, .bss```, the vector table— all of them are defined here. if the addresses are wrong, the MCU will boots into chaos.for syntax your friend is :[text](https://sourceware.org/binutils/docs/ld/Scripts.html)
 
-there are three important parts of the linker script: the memory section where we define the sizes and addresses of the FLASH and RAM, defining the stack pointer, and the SECTIONS block for he .isr_vector, .text , .data, etc
+There are three important parts of the linker script: the memory section where we define the sizes and addresses of the FLASH and RAM, defining the stack pointer, and the SECTIONS block for he .isr_vector, .text , .data, etc
 
 
 
-make reset_handler the default program-entry symbol.
+Make reset_handler the default program-entry symbol.
 ```ld
 ENTRY(reset_handler)
 ```
 
 
-starting with the memory section: through the datasheet, the FLASH has a length of 512K while the SRAM has a length of 128K, The flags (r/x/w) say whether the region is readable, writable, executable.
+Starting with the memory section: through the datasheet, the FLASH has a length of 512K while the SRAM has a length of 128K, The flags (r/x/w) say whether the region is readable, writable, executable.
 
 
 
@@ -496,8 +496,8 @@ SECTIONS
 ```
 
 
-and that's all!
-you can copy my makefile here for automatic compilation:
+And that's all!
+You can copy my makefile here for automatic compilation:
 ```Makefile
 # Toolchain and flags
 CC = arm-none-eabi-gcc
