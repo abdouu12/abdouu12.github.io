@@ -63,7 +63,7 @@ If you already know this stuff, feel free to skip to the code.
 I’m going to assume you don’t, which is why I’ll explain a few core concepts and syntax patterns that show up everywhere in embedded C.
 (Fair warning — this part’s a bit long)
 
-## Bitwise sytnax:
+## Bitwise syntax:
 In embedded C, bitwise operations are everywhere. You use them to control specific bits in a register — like turning on a pin, enabling a clock— without touching the rest of the register.
 
 Here are the basics:
